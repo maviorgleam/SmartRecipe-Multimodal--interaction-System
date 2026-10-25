@@ -1,0 +1,23 @@
+{
+  "project": "SmartRecipe AI-Assisted Cooking System",
+  "design_goal": "Reduce cognitive load and improve user trust in AI through multimodal interaction design",
+  "core_interaction_modules": {
+    "dual_mode_display": {
+      "modes": ["Global Overview", "Single-Step Focus"],
+      "design_target": "Improve key information retrieval efficiency by 40%",
+      "switch_trigger": "voice command + manual tap"
+    },
+    "multimodal_feedback": {
+      "channels": ["voice command", "vibration haptic feedback"],
+      "application_scenario": "hands-busy cooking scenarios",
+      "target_success_rate_noisy_env": 0.92
+    },
+    "transparent_ai_design": {
+      "features": ["recognition confidence prompt", "one-click error correction"],
+      "design_target": "Increase user trust by over 50%",
+      "transparency_level": "per-result confidence display"
+    }
+  },
+  "user_research_method": "Contextual user research + MoSCoW requirement prioritization",
+  "evaluation_method": "Between-subjects controlled experiment + semi-structured interview"
+}
