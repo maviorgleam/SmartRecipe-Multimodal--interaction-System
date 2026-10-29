@@ -1,0 +1,3 @@
+group,label,info_retrieval_efficiency,noisy_env_success_rate,user_trust_score
+control_group,Traditional Text Recipe,100,65.0,60.5
+experiment_group,SmartRecipe Multimodal System,140.0,92.0,92.1

@@ -1,87 +1,104 @@
-# Usability test quantitative analysis for SmartRecipe system
 import csv
+import sys
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-# 测试核心数据
-TEST_GROUPS = {
-    "control_group": {
-        "label": "Traditional Text Recipe",
-        "info_retrieval_efficiency": 100,
-        "noisy_env_success_rate": 65.0,
-        "user_trust_score": 60.5
-    },
-    "experiment_group": {
-        "label": "SmartRecipe Multimodal System",
-        "info_retrieval_efficiency": 140.0,
-        "noisy_env_success_rate": 92.0,
-        "user_trust_score": 92.1
-    }
-}
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'configs'))
+from usability_config import PLOT_CONFIG, METRIC_LABELS
 
-# 指标计算
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEST_DATA_PATH = os.path.join(BASE_DIR, 'data', 'usability_test_data.csv')
+OUTPUT_DIR = os.path.join(BASE_DIR, 'results')
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def load_test_data(file_path):
+    test_groups = {}
+    with open(file_path, 'r', encoding='utf-8-sig') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            group_key = row['group']
+            test_groups[group_key] = {
+                "label": row['label'],
+                "info_retrieval_efficiency": float(row['info_retrieval_efficiency']),
+                "noisy_env_success_rate": float(row['noisy_env_success_rate']),
+                "user_trust_score": float(row['user_trust_score'])
+            }
+    return test_groups
+
 def calculate_improvement(baseline, target):
-    """计算实验组相对对照组的提升幅度"""
     return round((target - baseline) / baseline * 100, 1)
 
-def generate_test_report():
-    """生成可用性测试报告"""
-    baseline = TEST_GROUPS["control_group"]
-    exp = TEST_GROUPS["experiment_group"]
-    
+def generate_test_report(test_groups):
+    baseline = test_groups["control_group"]
+    exp = test_groups["experiment_group"]
     print("=== SmartRecipe 可用性测试核心结果 ===")
     print(f"关键信息检索效率提升：{calculate_improvement(baseline['info_retrieval_efficiency'], exp['info_retrieval_efficiency'])}%")
     print(f"嘈杂环境操作成功率：{exp['noisy_env_success_rate']}%")
     print(f"用户信任度提升：{calculate_improvement(baseline['user_trust_score'], exp['user_trust_score'])}%")
     print()
 
-def export_result_csv(output_path):
-    """导出测试结果汇总表"""
-    with open(output_path, 'w', newline='') as f:
+def export_result_csv(test_groups, output_path):
+    with open(output_path, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
         writer.writerow(["Metric", "Control Group", "Experiment Group", "Improvement"])
-        
         metrics = ["info_retrieval_efficiency", "noisy_env_success_rate", "user_trust_score"]
         labels = ["Key Info Retrieval Efficiency", "Noisy Env Operation Success Rate", "User Trust Score"]
-        
+        baseline = test_groups["control_group"]
+        exp = test_groups["experiment_group"]
         for metric, label in zip(metrics, labels):
-            base = TEST_GROUPS["control_group"][metric]
-            exp = TEST_GROUPS["experiment_group"][metric]
-            improve = calculate_improvement(base, exp)
-            writer.writerow([label, base, exp, f"+{improve}%"])
+            base_val = baseline[metric]
+            exp_val = exp[metric]
+            improve = calculate_improvement(base_val, exp_val)
+            writer.writerow([label, base_val, exp_val, f"+{improve}%"])
 
-def plot_comparison(output_img_path):
-    """绘制三组指标对比柱状图"""
-    labels = ["Info Retrieval\nEfficiency", "Noisy Env\nSuccess Rate", "User Trust\nScore"]
-    base_vals = [
-        TEST_GROUPS["control_group"]["info_retrieval_efficiency"],
-        TEST_GROUPS["control_group"]["noisy_env_success_rate"],
-        TEST_GROUPS["control_group"]["user_trust_score"]
-    ]
-    exp_vals = [
-        TEST_GROUPS["experiment_group"]["info_retrieval_efficiency"],
-        TEST_GROUPS["experiment_group"]["noisy_env_success_rate"],
-        TEST_GROUPS["experiment_group"]["user_trust_score"]
-    ]
-    
-    x = np.arange(len(labels))
-    width = 0.35
-    
-    plt.figure(figsize=(8, 5))
-    plt.bar(x - width/2, base_vals, width, label='Traditional Recipe', color='#c4c4c4')
-    plt.bar(x + width/2, exp_vals, width, label='SmartRecipe System', color='#7fb3d5')
-    
-    plt.xticks(x, labels)
-    plt.ylabel('Score / Rate (%)')
-    plt.title('Usability Test Result Comparison')
-    plt.legend()
-    plt.grid(axis='y', alpha=0.3)
-    
-    plt.tight_layout()
-    plt.savefig(output_img_path, dpi=300, bbox_inches='tight')
+def plot_comparison(test_groups, output_img_path):
+    ctrl = test_groups["control_group"]
+    exp = test_groups["experiment_group"]
+    width = PLOT_CONFIG["bar_width"]
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=PLOT_CONFIG["figsize"])
+    idx_labels = [METRIC_LABELS["info_retrieval_efficiency"]]
+    idx_base = [ctrl["info_retrieval_efficiency"]]
+    idx_exp = [exp["info_retrieval_efficiency"]]
+    x1 = np.arange(len(idx_labels))
+    b1 = ax1.bar(x1 - width/2, idx_base, width, label='Traditional Recipe', color=PLOT_CONFIG["control_color"])
+    b2 = ax1.bar(x1 + width/2, idx_exp, width, label='SmartRecipe System', color=PLOT_CONFIG["experiment_color"])
+    ax1.set_xticks(x1)
+    ax1.set_xticklabels(idx_labels)
+    ax1.set_ylabel(PLOT_CONFIG["efficiency_ylabel"])
+    ax1.set_ylim(PLOT_CONFIG["efficiency_ylim"])
+    ax1.set_title(PLOT_CONFIG["efficiency_title"])
+    ax1.grid(axis='y', alpha=0.3)
+    for b in (b1, b2):
+        for rect in b:
+            h = rect.get_height()
+            ax1.annotate(f'{h:g}', xy=(rect.get_x() + rect.get_width()/2, h), xytext=(0, 3),
+                         textcoords='offset points', ha='center', va='bottom', fontsize=10)
+    rate_labels = [METRIC_LABELS["noisy_env_success_rate"], METRIC_LABELS["user_trust_score"]]
+    rate_base = [ctrl["noisy_env_success_rate"], ctrl["user_trust_score"]]
+    rate_exp = [exp["noisy_env_success_rate"], exp["user_trust_score"]]
+    x2 = np.arange(len(rate_labels))
+    b3 = ax2.bar(x2 - width/2, rate_base, width, label='Traditional Recipe', color=PLOT_CONFIG["control_color"])
+    b4 = ax2.bar(x2 + width/2, rate_exp, width, label='SmartRecipe System', color=PLOT_CONFIG["experiment_color"])
+    ax2.set_xticks(x2)
+    ax2.set_xticklabels(rate_labels)
+    ax2.set_ylabel(PLOT_CONFIG["rate_ylabel"])
+    ax2.set_ylim(PLOT_CONFIG["rate_ylim"])
+    ax2.set_title(PLOT_CONFIG["rate_title"])
+    ax2.grid(axis='y', alpha=0.3)
+    for b in (b3, b4):
+        for rect in b:
+            h = rect.get_height()
+            ax2.annotate(f'{h:g}', xy=(rect.get_x() + rect.get_width()/2, h), xytext=(0, 3),
+                         textcoords='offset points', ha='center', va='bottom', fontsize=10)
+    fig.legend(loc='upper center', ncol=2, bbox_to_anchor=(0.5, 0.99), frameon=False)
+    plt.tight_layout(rect=[0, 0, 1, 0.93])
+    plt.savefig(output_img_path, dpi=PLOT_CONFIG["dpi"], bbox_inches='tight')
+    plt.close()
 
 if __name__ == "__main__":
-    generate_test_report()
-    export_result_csv("../results/usability_test_summary.csv")
-    plot_comparison("../results/usability_comparison.png")
+    test_groups = load_test_data(TEST_DATA_PATH)
+    generate_test_report(test_groups)
+    export_result_csv(test_groups, os.path.join(OUTPUT_DIR, 'usability_test_summary.csv'))
+    plot_comparison(test_groups, os.path.join(OUTPUT_DIR, 'usability_comparison.png'))
     print("可用性测试分析完成，结果已导出")
