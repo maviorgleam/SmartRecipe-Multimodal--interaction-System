@@ -32,10 +32,11 @@ Verified that the system improves key information retrieval efficiency by 40%, a
 - **Evaluation Dimensions**: Information retrieval efficiency, operation success rate, user trust score
 
 ## Repository Structure
-This repository includes the modules I was personally responsible for:
+The repository includes the modules I was personally responsible for:
+- **data** – Raw user survey data (8 participants) and usability test comparison data
+- **configs** – Parameter configuration files for the analysis pipeline (survey coding rules, keyword mappings and plotting settings)
 - **scripts** – Python scripts for user research analysis and usability test quantitative evaluation
-- **configs** – Interaction design specifications and parameter configuration files
-- **results** – Summary of core test metrics and comparative analysis results
+- **results** – Core test metrics and comparative analysis results
 
 ## Supplementary Materials
 
